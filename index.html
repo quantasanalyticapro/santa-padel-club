@@ -137,6 +137,8 @@ body .sc2-main b{font-size:17px;line-height:1.15;text-align:center}
 body .sc2-two{display:grid;grid-template-columns:1fr 1fr;gap:8px}
 body .sc2-two button{min-height:52px;border-radius:14px;border:1px solid var(--c);background:transparent;font-weight:800;font-size:17px;color:var(--c)}
 body .sc2-main:disabled,body .sc2-two button:disabled{opacity:.4}
+body .stake{display:block;margin-top:3px;font-size:11px;font-weight:700;color:#9fb1ba}
+body .stake .up{color:#8fd19e}body .stake .dn{color:#f08a7e}
 </style></head><body><main id="app"></main>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
 <script>
@@ -170,6 +172,11 @@ function calc(evs,c=DEF){const need=c.sets==1?1:2,J=c.juegos,s={sets:[],g:[0,0],
    else if(md=='estrella'&&s.p[0]==s.p[1]&&s.p[0]>=3){s.dz++;if(s.dz==3)s.gold=true}}}
  return s}
 const pts=(s,c=DEF)=>s.tb||s.stb?s.p.join(' / '):(gm(c)!='oro'&&s.p[0]>=3&&s.p[1]>=3)?(s.p[0]==s.p[1]?'40 / 40':s.p[0]>s.p[1]?'Ad / 40':'40 / Ad'):s.p.map(x=>[0,15,30,40][x]).join(' / ');
+const stakes=m=>{const pa=pl(m.pareja_a_id),pb=pl(m.pareja_b_id);if(pa.length<2||pb.length<2)return null;
+ const el=id=>J[id]?.elo_actual||1200,kf=id=>(J[id]?.partidos_jugados||0)<5?64:40,av=a=>a.reduce((x,y)=>x+y,0)/a.length,
+ pA=1/(1+Math.pow(10,(av(pb.map(el))-av(pa.map(el)))/400)),pB=1-pA,kA=av(pa.map(kf)),kB=av(pb.map(kf));
+ return{A:{w:Math.round(kA*(1-pA)),l:Math.round(kA*pA)},B:{w:Math.round(kB*(1-pB)),l:Math.round(kB*pB)}}};
+const stakeTxt=(st,eq)=>st?`<span class=stake title="Puntos que se ganan o se pierden, según el puntaje actual (sin contar el bono de rendimiento)"><b class=up>+${st[eq].w}</b> / <b class=dn>−${st[eq].l}</b></span>`:'';
 const ptsTeam=(s,c,t)=>String(pts(s,c)).split(' / ')[t]||'0';
 const txt=(s,c)=>s.sets.map(x=>x.join('-')).join(' ')+(s.sets.length?' | ':'')+s.g.join('-')+' ('+pts(s,c)+')';
 function gameTotal(s){return s.sets.reduce((n,x)=>n+(Number(x[0])||0)+(Number(x[1])||0),0)+(Number(s.g[0])||0)+(Number(s.g[1])||0)}
@@ -256,7 +263,7 @@ function vAssign(){const m=M[assignMatchId];if(!m)return '';const t=T[m.torneo_i
 function mCard(m,compact=false){const t=T[m.torneo_id],c=canScore(m),teamName=id=>id?pn(id):'A definir',status={pendiente:'PRÓXIMO',en_progreso:'EN JUEGO',finalizado:'FINALIZADO'}[m.estado]||String(m.estado||'').replaceAll('_',' ').toUpperCase();
  const phase=`${t?.categoria?`Categoría ${t.categoria} · `:''}${m.fase||'Partido'}${m.grupo?' · Grupo '+m.grupo:''}`;
  return `<article class="match-card ${compact?'fixture-match':''}"><div class=match-hero>${t?.imagen_url?`<img src="${esc(t.imagen_url)}" alt="" loading=lazy>`:''}<div class=match-hero-copy><div class=match-tour>${esc(t?.nombre||'Torneo')}</div><div class=match-phase>${esc(phase)}</div></div><span class=match-status>${esc(status)}</span></div><div class=match-info>
- <div class=match-teams><div class=match-side>${pairAv(m.pareja_a_id)}<span class=match-side-name>${esc(teamName(m.pareja_a_id))}</span></div><span class=match-versus>VS</span><div class=match-side>${pairAv(m.pareja_b_id)}<span class=match-side-name>${esc(teamName(m.pareja_b_id))}</span></div></div>
+ <div class=match-teams><div class=match-side>${pairAv(m.pareja_a_id)}<span class=match-side-name>${esc(teamName(m.pareja_a_id))}</span>${m.estado!='finalizado'?stakeTxt(stakes(m),'A'):''}</div><span class=match-versus>VS</span><div class=match-side>${pairAv(m.pareja_b_id)}<span class=match-side-name>${esc(teamName(m.pareja_b_id))}</span>${m.estado!='finalizado'?stakeTxt(stakes(m),'B'):''}</div></div>
  ${m.resultado_sets?`<div class=match-result><span>${esc(m.resultado_sets)}</span></div>`:''}
  ${m.anotador_id?`<div class=match-details>Anotador: ${esc(nm(m.anotador_id))}${m.anotador_estado=='pendiente'?' · esperando aceptación':m.anotador_estado=='aceptado'?' · confirmado':m.anotador_estado=='rechazado'?' · rechazó':''}</div>`:''}
  <div class=match-actions>${c&&m.estado!='finalizado'&&m.pareja_a_id&&m.pareja_b_id?`<button class=p data-a=score data-id=${m.id}>📝 Anotar</button>`:''}
@@ -371,11 +378,12 @@ function vScore(){const m=M[score.id],t=T[m.torneo_id],c=cfgOf(m),s=calc(score.e
   const winnerPick=pick.t=='winner';
   sheet=`<div class=sheet data-a=cancel><div><h3>${winnerPick?'¿Quién hizo el winner?':'¿Quién cometió el error?'}</h3>${ids.map(j=>winnerPick?`<button class=winner-picker-option data-a=add data-t=${pick.t} data-e=${pick.e} data-j=${j}><span class=winner-picker-avatar>${av(j,'s')}<i class=winner-picker-bolt title="Winner">⚡</i></span><span class=winner-picker-name>${esc(nm(j))}</span></button>`:`<button class=winner-picker-option data-a=add data-t=${pick.t} data-e=${pick.e} data-j=${j}><span class=winner-picker-avatar>${av(j,'s')}<i class=error-picker-mark title="Error rival">×</i></span><span class=winner-picker-name>${esc(nm(j))}</span></button>`).join('')}</div></div>`}
  const finishedSets=s.sets.map((x,i)=>`<span>SET ${i+1}　${x.join('–')}</span>`).join(''),gameLabel=s.stb?`SÚPER TIE-BREAK A ${c.stb}`:s.tb?`TIE-BREAK A ${c.tb}`:'JUEGOS',gameA=s.stb?s.p[0]:s.g[0],gameB=s.stb?s.p[1]:s.g[1],gameProgress=s.stb?'':`${s.g[0]}/${c.juegos}　—　${s.g[1]}/${c.juegos}`;
+ const stk=stakes(m);
  const colFor=(eq,pid)=>`<div class="sc2-col sc2-${eq}"><button class=sc2-main data-a=add data-t=punto_general data-e=${eq} ${canScore?'':'disabled'}><small>PUNTO</small><b>${esc(pn(pid))}</b></button><div class=sc2-two><button data-a=pick data-t=winner data-e=${eq} ${canScore?'':'disabled'}>W</button><button data-a=pick data-t=error_no_forzado data-e=${eq} ${canScore?'':'disabled'}>UE</button></div></div>`;
  const actions=`<div class=sc2-cols>${colFor('A',m.pareja_a_id)}${colFor('B',m.pareja_b_id)}</div>`;
  return `<div class=scoring-header><button data-a=back>‹ Partidos</button><div><strong>${esc(t?.nombre||'Torneo')}</strong><span>${esc(t?.categoria?`Categoría ${t.categoria} · `:'')}${esc(m.fase||'Partido')}${m.grupo?' · Grupo '+esc(m.grupo):''}</span></div></div>
  ${m.estado=='pendiente'?'<div class="scoring-live-label">PARTIDO POR COMENZAR</div>':'<div class="scoring-live-label live">● EN VIVO</div>'}
- <section class="sb2" aria-label="Marcador del partido"><div class=sb2-top><span>SET ${currentSet}/${c.sets}</span>${s.sets.length?`<span>${s.sets.map(x=>x.join('–')).join('　')}</span>`:''}</div><div class=sb2-h><span></span><span>${s.stb?'SÚPER TB':s.tb?'TIE-BREAK':'JUEGOS'}</span><span>${s.stb?'':'PUNTOS'}</span></div>${[['A',m.pareja_a_id,0],['B',m.pareja_b_id,1]].map(([eq,pid,k])=>`<div class="sb2-r ${scoreFlash==eq?'flash':''}" style="--c:${eq=='A'?'#7fb3d5':'#e4cb79'}"><div class=sb2-who>${faces(pid,serving?.team==eq?serving.player:null)}<div class=sb2-n>${esc(pn(pid))}</div></div><div class=sb2-g>${k?gameB:gameA}</div><div class=sb2-p>${s.stb?'':esc(ptsTeam(s,c,k))}</div></div>`).join('')}${modeBadge}</section>
+ <section class="sb2" aria-label="Marcador del partido"><div class=sb2-top><span>SET ${currentSet}/${c.sets}</span>${s.sets.length?`<span>${s.sets.map(x=>x.join('–')).join('　')}</span>`:''}</div><div class=sb2-h><span></span><span>${s.stb?'SÚPER TB':s.tb?'TIE-BREAK':'JUEGOS'}</span><span>${s.stb?'':'PUNTOS'}</span></div>${[['A',m.pareja_a_id,0],['B',m.pareja_b_id,1]].map(([eq,pid,k])=>`<div class="sb2-r ${scoreFlash==eq?'flash':''}" style="--c:${eq=='A'?'#7fb3d5':'#e4cb79'}"><div class=sb2-who>${faces(pid,serving?.team==eq?serving.player:null)}<div class=sb2-n>${esc(pn(pid))}${m.estado!='finalizado'?stakeTxt(stk,eq):''}</div></div><div class=sb2-g>${k?gameB:gameA}</div><div class=sb2-p>${s.stb?'':esc(ptsTeam(s,c,k))}</div></div>`).join('')}${modeBadge}</section>
  ${serveSetup}${m.estado=='pendiente'?`<div class=scoring-start>Elegí el orden de saque antes de empezar<button class="p w" data-a=start ${configured?'':'disabled'}>▶ Comenzar partido</button></div>`:''}
  ${on&&serving?actions:''}${fin?`<div class=scoring-finished>🏁 Ganó ${esc(pn(s.w==0?m.pareja_a_id:m.pareja_b_id))} · ${sets_(s)}<button class="p w" data-a=close>Cerrar partido y actualizar puntaje</button></div>`:''}
  ${on&&serving?`<div style="height:74px"></div><div class=bar><button class=scoring-undo data-a=undo ${canUndo?'':'disabled'} title="${score.undoReady===false?'No se pudo guardar el límite de deshacer':canUndo?'':'Deshacer está limitado al juego actual'}">↶　Deshacer último punto</button></div>`:''}${sheet}`}
