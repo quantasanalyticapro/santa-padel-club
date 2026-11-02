@@ -139,6 +139,27 @@ body .sc2-two button{min-height:52px;border-radius:14px;border:1px solid var(--c
 body .sc2-main:disabled,body .sc2-two button:disabled{opacity:.4}
 body .stake{display:block;margin-top:3px;font-size:11px;font-weight:700;color:#9fb1ba}
 body .stake .up{color:#8fd19e}body .stake .dn{color:#f08a7e}
+/* Marcador por avatar */
+body .sc3-card{position:relative;border:2px solid var(--c);border-radius:20px;background:linear-gradient(180deg,color-mix(in srgb,var(--c) 14%,#0a243a),#0a243a);padding:12px 14px 14px;margin:10px 0}
+body .sc3-A{--c:#7fb3d5}body .sc3-B{--c:#e4cb79}
+body .sc3-card.flash{animation:sc3fl .8s ease}
+@keyframes sc3fl{0%{box-shadow:0 0 0 0 var(--c),inset 0 0 40px #ffffff33}100%{box-shadow:0 0 0 14px transparent}}
+body .sc3-hd{display:flex;justify-content:space-between;align-items:flex-start}
+body .sc3-tn{font-weight:800;font-size:17px;color:var(--c)}
+body .sc3-pts{font-size:64px;font-weight:900;line-height:.95;color:var(--c)}
+body .sc3-gm{margin-top:8px}body .sc3-gm small{display:block;font-size:10px;letter-spacing:.9px;color:#9fb1ba}body .sc3-gm b{font-size:30px}
+body .sc3-avs{display:flex;justify-content:space-around;margin-top:10px}
+body .sc3-pl{display:flex;flex-direction:column;align-items:center;gap:6px;width:46%}
+body .sc3-av{width:74px;height:74px;border-radius:50%;touch-action:none;-webkit-touch-callout:none;-webkit-user-select:none;user-select:none;cursor:pointer}
+body .sc3-av .av{width:74px;height:74px;margin:0;font-size:22px;border:3px solid var(--c)}
+body .sc3-av.srv{box-shadow:0 0 0 4px #ffffff22,0 0 22px var(--c)}
+body .sc3-pl b{font-size:15px}body .sc3-pl em{font-style:normal;font-size:10px;font-weight:800;letter-spacing:1px;color:var(--c);min-height:12px}
+#sc3menu{position:fixed;left:0;top:0;width:0;height:0;z-index:80}#sc3menu[hidden]{display:none}
+.sc3-dim{position:fixed;inset:0;background:#00000066}
+.sc3-bub{position:absolute;display:flex;flex-direction:column;align-items:center;gap:4px;transform:translate(-50%,-50%);cursor:pointer;touch-action:none}
+.sc3-bub i{width:58px;height:58px;border-radius:50%;display:grid;place-items:center;font-style:normal;font-size:26px;font-weight:900;color:#06243d;background:var(--k);border:3px solid transparent}
+.sc3-bub span{font-size:12px;font-weight:800;background:#000a;border-radius:999px;padding:2px 9px;color:var(--k)}
+.sc3-bub.on i{border-color:#fff;transform:scale(1.18)}
 </style></head><body><main id="app"></main>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
 <script>
@@ -148,7 +169,7 @@ let K=KEY||localStorage.getItem('sbk')||'';
 if(!K){K=(prompt('Pegá la clave publicable de Supabase (Settings > API Keys)')||'').trim();localStorage.setItem('sbk',K)}
 const sb=supabase.createClient(URL_,K),$=s=>document.querySelector(s),A=$('#app');
 const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
-let recovery=/type=recovery/.test(location.hash),loginEmail='',hideDone=false,bracketX={},D={},DOK=false,scoreBusy=false,scoreFlash=null,editDatos=false,me=null,J={},T={},P={},M={},Q={},tab='partidos',sel=null,score=null,pick=null,assignMatchId=null,assignQuery='',scoringTeam='A',msg='',ed=null,previewRows=null,notifOpen=false,newTournamentOpen=false,newTournamentCover=null,newTournamentCoverData='',coverTargetId=null,pushEnabled=false,pushStatusUser=null,pushStatusLoading=false,pushToggleBusy=false;
+let recovery=/type=recovery/.test(location.hash),loginEmail='',hideDone=false,bracketX={},D={},DOK=false,scoreBusy=false,scoreFlash=null,scoreCan=false,editDatos=false,me=null,J={},T={},P={},M={},Q={},tab='partidos',sel=null,score=null,pick=null,assignMatchId=null,assignQuery='',scoringTeam='A',msg='',ed=null,previewRows=null,notifOpen=false,newTournamentOpen=false,newTournamentCover=null,newTournamentCoverData='',coverTargetId=null,pushEnabled=false,pushStatusUser=null,pushStatusLoading=false,pushToggleBusy=false;
 
 /* ---------- Motor de puntuación configurable ----------
    cfg: sets (1|3) · juegos (4|6) · tb (0|7|10 al empatar juegos) · stb (0|7|10 3.er set) · oro (punto de oro) */
@@ -173,10 +194,11 @@ function calc(evs,c=DEF){const need=c.sets==1?1:2,J=c.juegos,s={sets:[],g:[0,0],
  return s}
 const pts=(s,c=DEF)=>s.tb||s.stb?s.p.join(' / '):(gm(c)!='oro'&&s.p[0]>=3&&s.p[1]>=3)?(s.p[0]==s.p[1]?'40 / 40':s.p[0]>s.p[1]?'Ad / 40':'40 / Ad'):s.p.map(x=>[0,15,30,40][x]).join(' / ');
 const stakes=m=>{const pa=pl(m.pareja_a_id),pb=pl(m.pareja_b_id);if(pa.length<2||pb.length<2)return null;
- const el=id=>J[id]?.elo_actual||1200,kf=id=>(J[id]?.partidos_jugados||0)<5?64:40,av=a=>a.reduce((x,y)=>x+y,0)/a.length,
+ const el=id=>J[id]?.elo_actual||1200,kf=id=>32,av=a=>a.reduce((x,y)=>x+y,0)/a.length,
  pA=1/(1+Math.pow(10,(av(pb.map(el))-av(pa.map(el)))/400)),pB=1-pA,kA=av(pa.map(kf)),kB=av(pb.map(kf));
  return{A:{w:Math.round(kA*(1-pA)),l:Math.round(kA*pA)},B:{w:Math.round(kB*(1-pB)),l:Math.round(kB*pB)}}};
 const stakeTxt=(st,eq)=>st?`<span class=stake title="Puntos que se ganan o se pierden, según el puntaje actual (sin contar el bono de rendimiento)"><b class=up>+${st[eq].w}</b> / <b class=dn>−${st[eq].l}</b></span>`:'';
+const sn=id=>{const p=String(J[id]?.nombre||'').split(' ');return p.length>1?p[0][0]+'. '+p.slice(1).join(' '):(p[0]||'')};
 const ptsTeam=(s,c,t)=>String(pts(s,c)).split(' / ')[t]||'0';
 const txt=(s,c)=>s.sets.map(x=>x.join('-')).join(' ')+(s.sets.length?' | ':'')+s.g.join('-')+' ('+pts(s,c)+')';
 function gameTotal(s){return s.sets.reduce((n,x)=>n+(Number(x[0])||0)+(Number(x[1])||0),0)+(Number(s.g[0])||0)+(Number(s.g[1])||0)}
@@ -380,13 +402,16 @@ function vScore(){const m=M[score.id],t=T[m.torneo_id],c=cfgOf(m),s=calc(score.e
  const finishedSets=s.sets.map((x,i)=>`<span>SET ${i+1}　${x.join('–')}</span>`).join(''),gameLabel=s.stb?`SÚPER TIE-BREAK A ${c.stb}`:s.tb?`TIE-BREAK A ${c.tb}`:'JUEGOS',gameA=s.stb?s.p[0]:s.g[0],gameB=s.stb?s.p[1]:s.g[1],gameProgress=s.stb?'':`${s.g[0]}/${c.juegos}　—　${s.g[1]}/${c.juegos}`;
  const stk=stakes(m);
  const colFor=(eq,pid)=>`<div class="sc2-col sc2-${eq}"><button class=sc2-main data-a=add data-t=punto_general data-e=${eq} ${canScore?'':'disabled'}><small>PUNTO</small><b>${esc(pn(pid))}</b></button><div class=sc2-two><button data-a=pick data-t=winner data-e=${eq} ${canScore?'':'disabled'}>W</button><button data-a=pick data-t=error_no_forzado data-e=${eq} ${canScore?'':'disabled'}>UE</button></div></div>`;
- const actions=`<div class=sc2-cols>${colFor('A',m.pareja_a_id)}${colFor('B',m.pareja_b_id)}</div>`;
+ const actions='';
+ scoreCan=canScore;
+ const cardsHtml=[['A',m.pareja_a_id,0],['B',m.pareja_b_id,1]].map(([eq,pid,k])=>`<div class="sc3-card sc3-${eq} ${scoreFlash==eq?'flash':''}"><div class=sc3-hd><div><div class=sc3-tn>${esc(pn(pid))}</div>${m.estado!='finalizado'?stakeTxt(stk,eq):''}<div class=sc3-gm><small>${s.stb?'SÚPER TB':s.tb?'TIE-BREAK':'JUEGOS'}${s.sets.length?' · SET '+currentSet:''}</small><b>${k?gameB:gameA}</b></div></div><div class=sc3-pts>${s.stb?'':esc(ptsTeam(s,c,k))}</div></div><div class=sc3-avs>${pl(pid).map(id=>`<div class=sc3-pl><div class="sc3-av ${serving&&serving.player==id?'srv':''}" data-eq=${eq} data-j=${id}>${av(id)}</div><b>${esc(sn(id))}</b><em>${serving&&serving.player==id?'SACA':''}</em></div>`).join('')}</div></div>`).join('');
+ const lastEv=score.evs[score.evs.length-1],undoLabel=lastEv?'Deshacer · '+({winner:'Ganador de ',presion:'Presión de ',error_no_forzado:'Error de ',punto_general:'Punto de '}[lastEv.tipo_evento]||'')+(lastEv.jugador_id?sn(lastEv.jugador_id):pn(lastEv.equipo_que_suma=='A'?m.pareja_a_id:m.pareja_b_id)):'Deshacer último punto';
  return `<div class=scoring-header><button data-a=back>‹ Partidos</button><div><strong>${esc(t?.nombre||'Torneo')}</strong><span>${esc(t?.categoria?`Categoría ${t.categoria} · `:'')}${esc(m.fase||'Partido')}${m.grupo?' · Grupo '+esc(m.grupo):''}</span></div></div>
  ${m.estado=='pendiente'?'<div class="scoring-live-label">PARTIDO POR COMENZAR</div>':'<div class="scoring-live-label live">● EN VIVO</div>'}
- <section class="sb2" aria-label="Marcador del partido"><div class=sb2-top><span>SET ${currentSet}/${c.sets}</span>${s.sets.length?`<span>${s.sets.map(x=>x.join('–')).join('　')}</span>`:''}</div><div class=sb2-h><span></span><span>${s.stb?'SÚPER TB':s.tb?'TIE-BREAK':'JUEGOS'}</span><span>${s.stb?'':'PUNTOS'}</span></div>${[['A',m.pareja_a_id,0],['B',m.pareja_b_id,1]].map(([eq,pid,k])=>`<div class="sb2-r ${scoreFlash==eq?'flash':''}" style="--c:${eq=='A'?'#7fb3d5':'#e4cb79'}"><div class=sb2-who>${faces(pid,serving?.team==eq?serving.player:null)}<div class=sb2-n>${esc(pn(pid))}${m.estado!='finalizado'?stakeTxt(stk,eq):''}</div></div><div class=sb2-g>${k?gameB:gameA}</div><div class=sb2-p>${s.stb?'':esc(ptsTeam(s,c,k))}</div></div>`).join('')}${modeBadge}</section>
+ ${cardsHtml}${modeBadge}
  ${serveSetup}${m.estado=='pendiente'?`<div class=scoring-start>Elegí el orden de saque antes de empezar<button class="p w" data-a=start ${configured?'':'disabled'}>▶ Comenzar partido</button></div>`:''}
  ${on&&serving?actions:''}${fin?`<div class=scoring-finished>🏁 Ganó ${esc(pn(s.w==0?m.pareja_a_id:m.pareja_b_id))} · ${sets_(s)}<button class="p w" data-a=close>Cerrar partido y actualizar puntaje</button></div>`:''}
- ${on&&serving?`<div style="height:74px"></div><div class=bar><button class=scoring-undo data-a=undo ${canUndo?'':'disabled'} title="${score.undoReady===false?'No se pudo guardar el límite de deshacer':canUndo?'':'Deshacer está limitado al juego actual'}">↶　Deshacer último punto</button></div>`:''}${sheet}`}
+ ${on&&serving?`<div style="height:74px"></div><div class=bar><button class=scoring-undo data-a=undo ${canUndo?'':'disabled'} title="${score.undoReady===false?'No se pudo guardar el límite de deshacer':canUndo?'':'Deshacer está limitado al juego actual'}">↶　${undoLabel}</button></div>`:''}${sheet}`}
 
 function render(){
  if(recovery){document.body.classList.remove('app-screen','tournaments-screen','matches-screen','ranking-screen');A.innerHTML=vRecovery();return}
@@ -610,5 +635,27 @@ if(/error_code=otp_expired|error=access_denied/.test(location.hash)){msg='El lin
 document.addEventListener('scroll',e=>{const t=e.target;if(t&&t.classList&&t.classList.contains('bracket-scroll'))bracketX[sel]=t.scrollLeft},true);
 const posBracket=()=>{const sc=document.querySelector('.bracket-scroll');if(!sc)return;const x=bracketX[sel];if(x!=null){sc.scrollLeft=x;return}const r=sc.querySelector('.bracket-round.current');if(r)sc.scrollLeft=Math.max(0,r.getBoundingClientRect().left-sc.getBoundingClientRect().left+sc.scrollLeft-4)};
 {const _r=render;render=function(){_r.apply(this,arguments);posBracket()}}
+async function scoreAction(k,eq,j){if(scoreBusy||!score)return;const c=cfgOf(M[score.id]),s=calc(score.evs,c);if(s.w!=null)return;
+ const tipo=k=='p'?'punto_general':k=='w'?'winner':k=='pr'?'presion':'error_no_forzado',team=k=='e'?(eq=='A'?'B':'A'):eq;
+ scoreBusy=true;scoreFlash=team;render();
+ try{const n=calc(score.evs.concat([{equipo_que_suma:team}]),c),r=await sb.from('estadisticas_eventos').insert({partido_id:score.id,tipo_evento:tipo,jugador_id:k=='p'?null:j,equipo_que_suma:team,marcador_momento:txt(n,c)});if(err(r))return;await openScore(score.id)}finally{scoreBusy=false;render();scoreFlash=null}}
+{const OPT=[['w','Ganador','#8fd19e','↑'],['pr','Presión','#e8b34f','→'],['e','Error','#e06a55','✕']];let hold=null,mn=null;
+ document.body.insertAdjacentHTML('beforeend','<div id=sc3menu hidden></div>');
+ const box=()=>document.getElementById('sc3menu'),closeM=()=>{mn=null;const m=box();m.hidden=true;m.innerHTML=''};
+ const show=a=>{const r=a.getBoundingClientRect(),cx=r.left+r.width/2,cy=r.top+r.height/2,right=[...a.closest('.sc3-avs').children].indexOf(a.closest('.sc3-pl'))===1;
+  mn={eq:a.dataset.eq,j:a.dataset.j};const m=box();m.hidden=false;
+  m.innerHTML='<div class=sc3-dim data-sc3close></div><div style="position:fixed;left:'+cx+'px;top:'+cy+'px">'+OPT.map(([k,l,c,i],n)=>`<div class=sc3-bub data-sc3k=${k} style="--k:${c};left:${n==1?(right?-86:86):0}px;top:${n==0?-88:n==2?88:0}px"><i>${i}</i><span>${l}</span></div>`).join('')+'</div>';
+  if(navigator.vibrate)try{navigator.vibrate(15)}catch(e){}};
+ const nearest=(x,y)=>{let best=null,bd=60;document.querySelectorAll('.sc3-bub').forEach(b=>{const r=b.getBoundingClientRect(),d=Math.hypot(x-(r.left+r.width/2),y-(r.top+r.height/2));b.classList.remove('on');if(d<bd){bd=d;best=b}});if(best)best.classList.add('on');return best};
+ document.addEventListener('contextmenu',e=>{if(e.target.closest('.sc3-av'))e.preventDefault()});
+ document.addEventListener('pointerdown',e=>{const a=e.target.closest('.sc3-av');if(!a||!scoreCan||scoreBusy||mn)return;
+  hold={eq:a.dataset.eq,j:a.dataset.j,open:false};hold.timer=setTimeout(()=>{hold.open=true;show(a)},350)});
+ document.addEventListener('pointermove',e=>{if(hold&&hold.open)nearest(e.clientX,e.clientY)});
+ document.addEventListener('pointerup',e=>{if(!hold)return;clearTimeout(hold.timer);const h=hold;hold=null;
+  if(!h.open){scoreAction('p',h.eq,h.j);return}
+  const b=nearest(e.clientX,e.clientY);if(b){closeM();scoreAction(b.dataset.sc3k,h.eq,h.j)}});
+ document.addEventListener('pointercancel',()=>{if(hold){clearTimeout(hold.timer);hold=null}});
+ document.addEventListener('click',e=>{const d=e.target.closest('[data-sc3k],[data-sc3close]');if(!d)return;
+  if(d.dataset.sc3k&&mn){const x=mn;closeM();scoreAction(d.dataset.sc3k,x.eq,x.j)}else closeM()})}
 load().then(render);
 </script></body></html>
