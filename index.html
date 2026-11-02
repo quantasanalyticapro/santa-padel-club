@@ -160,8 +160,26 @@ body .sc3-pl b{font-size:15px}body .sc3-pl em{font-style:normal;font-size:10px;f
 .sc3-bub i{width:58px;height:58px;border-radius:50%;display:grid;place-items:center;font-style:normal;font-size:26px;font-weight:900;color:#06243d;background:var(--k);border:3px solid transparent}
 .sc3-bub span{font-size:12px;font-weight:800;background:#000a;border-radius:999px;padding:2px 9px;color:var(--k)}
 .sc3-bub.on i{border-color:#fff;transform:scale(1.18)}
+/* Pantalla de marcador (tablet) */
+body .sc3-qr{margin-left:auto;font-size:13px;padding:6px 10px;min-height:0;border:1px solid #806d3e;border-radius:10px;background:none;color:#e4cb79}
+.qrbox svg{width:min(70vw,300px);height:auto;background:#fff;padding:8px;border-radius:12px}
+body.pantalla{background:#000;color:#fff;padding:0;margin:0}
+body.pantalla #app{max-width:none!important;width:100%!important;margin:0!important;padding:0!important}
+body.pantalla .pt-live,body.pantalla .pt-top span{white-space:nowrap}
+.pt-wrap{min-height:100vh;display:flex;flex-direction:column;padding:2vh 3vw;font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+.pt-top{display:flex;justify-content:space-between;gap:12px;font-weight:800;letter-spacing:.1em;font-size:clamp(14px,2.2vw,28px);color:#9fb1ba}
+.pt-live{color:#ff6b6b}
+.pt-main{flex:1;display:grid;grid-template-columns:1fr 1fr;gap:3vw;align-items:center}
+.pt-team{text-align:center}.pt-A{--c:#7fb3d5}.pt-B{--c:#e4cb79}
+.pt-name{display:flex;justify-content:center;align-items:center;gap:.4em;font-size:clamp(20px,3.6vw,60px);font-weight:800;color:var(--c)}
+.pt-pts{font-size:clamp(80px,24vw,400px);font-weight:900;line-height:1;color:var(--c)}
+.pt-gm small{display:block;font-size:clamp(12px,1.8vw,26px);letter-spacing:.15em;color:#9fb1ba}.pt-gm b{font-size:clamp(40px,8vw,140px)}
+.pt-dot{width:.45em;height:.45em;border-radius:50%;background:#b6f23a;display:inline-block}
+.pt-srv,.pt-fin{text-align:center;font-size:clamp(16px,2.6vw,36px);color:#9fb1ba;padding:1vh 0}.pt-fin{color:#e4cb79;font-weight:800}
+.pt-msg{margin:auto;font-size:28px;color:#9fb1ba}
 </style></head><body><main id="app"></main>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js"></script>
 <script>
 const URL_='https://ypptwklnylrnnoqxcupe.supabase.co', KEY='sb_publishable_vJWdwmoVfWYCgD2lMA2hpQ_EgNjSBvG';  // KEY: clave publicable (sb_publishable_...)
 const PUSH_VAPID_PUBLIC_KEY='BLOBc_vC-qamViO4pAkIR9FNuuv7Qzb6oYa2qZyPo0qle7-Ly9NHpE8L89kdVWb1tPnL9czSpv4TEiBwVg_GmOg';
@@ -169,7 +187,7 @@ let K=KEY||localStorage.getItem('sbk')||'';
 if(!K){K=(prompt('Pegá la clave publicable de Supabase (Settings > API Keys)')||'').trim();localStorage.setItem('sbk',K)}
 const sb=supabase.createClient(URL_,K),$=s=>document.querySelector(s),A=$('#app');
 const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
-let recovery=/type=recovery/.test(location.hash),loginEmail='',hideDone=false,bracketX={},D={},DOK=false,scoreBusy=false,scoreFlash=null,scoreCan=false,editDatos=false,me=null,J={},T={},P={},M={},Q={},tab='partidos',sel=null,score=null,pick=null,assignMatchId=null,assignQuery='',scoringTeam='A',msg='',ed=null,previewRows=null,notifOpen=false,newTournamentOpen=false,newTournamentCover=null,newTournamentCoverData='',coverTargetId=null,pushEnabled=false,pushStatusUser=null,pushStatusLoading=false,pushToggleBusy=false;
+let recovery=/type=recovery/.test(location.hash),loginEmail='',hideDone=false,bracketX={},D={},DOK=false,scoreBusy=false,scoreFlash=null,scoreCan=false,qrOpen=false,pantallaEvs=[],pantallaErr=false,editDatos=false,me=null,J={},T={},P={},M={},Q={},tab='partidos',sel=null,score=null,pick=null,assignMatchId=null,assignQuery='',scoringTeam='A',msg='',ed=null,previewRows=null,notifOpen=false,newTournamentOpen=false,newTournamentCover=null,newTournamentCoverData='',coverTargetId=null,pushEnabled=false,pushStatusUser=null,pushStatusLoading=false,pushToggleBusy=false;
 
 /* ---------- Motor de puntuación configurable ----------
    cfg: sets (1|3) · juegos (4|6) · tb (0|7|10 al empatar juegos) · stb (0|7|10 3.er set) · oro (punto de oro) */
@@ -199,6 +217,7 @@ const stakes=m=>{const pa=pl(m.pareja_a_id),pb=pl(m.pareja_b_id);if(pa.length<2|
  return{A:{w:Math.round(kA*(1-pA)),l:Math.round(kA*pA)},B:{w:Math.round(kB*(1-pB)),l:Math.round(kB*pB)}}};
 const stakeTxt=(st,eq)=>st?`<span class=stake title="Puntos que se ganan o se pierden, según el puntaje actual (sin contar el bono de rendimiento)"><b class=up>+${st[eq].w}</b> / <b class=dn>−${st[eq].l}</b></span>`:'';
 const sn=id=>{const p=String(J[id]?.nombre||'').split(' ');return p.length>1?p[0][0]+'. '+p.slice(1).join(' '):(p[0]||'')};
+const PANTALLA=new URLSearchParams(location.search).get('pantalla');
 const ptsTeam=(s,c,t)=>String(pts(s,c)).split(' / ')[t]||'0';
 const txt=(s,c)=>s.sets.map(x=>x.join('-')).join(' ')+(s.sets.length?' | ':'')+s.g.join('-')+' ('+pts(s,c)+')';
 function gameTotal(s){return s.sets.reduce((n,x)=>n+(Number(x[0])||0)+(Number(x[1])||0),0)+(Number(s.g[0])||0)+(Number(s.g[1])||0)}
@@ -406,14 +425,26 @@ function vScore(){const m=M[score.id],t=T[m.torneo_id],c=cfgOf(m),s=calc(score.e
  scoreCan=canScore;
  const cardsHtml=[['A',m.pareja_a_id,0],['B',m.pareja_b_id,1]].map(([eq,pid,k])=>`<div class="sc3-card sc3-${eq} ${scoreFlash==eq?'flash':''}"><div class=sc3-hd><div><div class=sc3-tn>${esc(pn(pid))}</div>${m.estado!='finalizado'?stakeTxt(stk,eq):''}<div class=sc3-gm><small>${s.stb?'SÚPER TB':s.tb?'TIE-BREAK':'JUEGOS'}${s.sets.length?' · SET '+currentSet:''}</small><b>${k?gameB:gameA}</b></div></div><div class=sc3-pts>${s.stb?'':esc(ptsTeam(s,c,k))}</div></div><div class=sc3-avs>${pl(pid).map(id=>`<div class=sc3-pl><div class="sc3-av ${serving&&serving.player==id?'srv':''}" data-eq=${eq} data-j=${id}>${av(id)}</div><b>${esc(sn(id))}</b><em>${serving&&serving.player==id?'SACA':''}</em></div>`).join('')}</div></div>`).join('');
  const lastEv=score.evs[score.evs.length-1],undoLabel=lastEv?'Deshacer · '+({winner:'Ganador de ',presion:'Presión de ',error_no_forzado:'Error de ',punto_general:'Punto de '}[lastEv.tipo_evento]||'')+(lastEv.jugador_id?sn(lastEv.jugador_id):pn(lastEv.equipo_que_suma=='A'?m.pareja_a_id:m.pareja_b_id)):'Deshacer último punto';
- return `<div class=scoring-header><button data-a=back>‹ Partidos</button><div><strong>${esc(t?.nombre||'Torneo')}</strong><span>${esc(t?.categoria?`Categoría ${t.categoria} · `:'')}${esc(m.fase||'Partido')}${m.grupo?' · Grupo '+esc(m.grupo):''}</span></div></div>
+ const qrUrl=location.origin+location.pathname+'?pantalla='+m.id;let qrSvg='';try{if(typeof qrcode=='function'){const q=qrcode(0,'M');q.addData(qrUrl);q.make();qrSvg=q.createSvgTag({cellSize:6,margin:2,scalable:true})}}catch(e){}
+ const qrSheet=qrOpen?`<div class=sheet><div style="max-height:92vh;overflow:auto;text-align:center"><h3>Pantalla para tablet</h3><p class=mut>Escaneá este código con la tablet.</p><div class=qrbox>${qrSvg||'<p class=mut>No se pudo generar el código. Usá el link.</p>'}</div><input readonly value="${esc(qrUrl)}" onclick="this.select()"><button class=w data-a=qrclose>Cerrar</button></div></div>`:'';
+ return `<div class=scoring-header><button data-a=back>‹ Partidos</button><div><strong>${esc(t?.nombre||'Torneo')}</strong><span>${esc(t?.categoria?`Categoría ${t.categoria} · `:'')}${esc(m.fase||'Partido')}${m.grupo?' · Grupo '+esc(m.grupo):''}</span></div><button class=sc3-qr type=button data-a=qr aria-label="Pantalla para tablet">📺 Pantalla</button></div>
  ${m.estado=='pendiente'?'<div class="scoring-live-label">PARTIDO POR COMENZAR</div>':'<div class="scoring-live-label live">● EN VIVO</div>'}
  ${cardsHtml}${modeBadge}
  ${serveSetup}${m.estado=='pendiente'?`<div class=scoring-start>Elegí el orden de saque antes de empezar<button class="p w" data-a=start ${configured?'':'disabled'}>▶ Comenzar partido</button></div>`:''}
  ${on&&serving?actions:''}${fin?`<div class=scoring-finished>🏁 Ganó ${esc(pn(s.w==0?m.pareja_a_id:m.pareja_b_id))} · ${sets_(s)}<button class="p w" data-a=close>Cerrar partido y actualizar puntaje</button></div>`:''}
- ${on&&serving?`<div style="height:74px"></div><div class=bar><button class=scoring-undo data-a=undo ${canUndo?'':'disabled'} title="${score.undoReady===false?'No se pudo guardar el límite de deshacer':canUndo?'':'Deshacer está limitado al juego actual'}">↶　${undoLabel}</button></div>`:''}${sheet}`}
+ ${on&&serving?`<div style="height:74px"></div><div class=bar><button class=scoring-undo data-a=undo ${canUndo?'':'disabled'} title="${score.undoReady===false?'No se pudo guardar el límite de deshacer':canUndo?'':'Deshacer está limitado al juego actual'}">↶　${undoLabel}</button></div>`:''}${sheet}${qrSheet}`}
 
+function vPantalla(){const m=M[PANTALLA];
+ if(!m)return `<div class=pt-wrap><div class=pt-msg>${pantallaErr?'No se encontró este partido.':'Cargando marcador…'}</div></div>`;
+ const c=cfgOf(m),s=calc(pantallaEvs,c),sv=currentServer(m,s),t=T[m.torneo_id],cur=s.sets.length+1,fin=s.w!=null;
+ const team=(k,pid)=>`<div class="pt-team pt-${k?'B':'A'}"><div class=pt-name>${sv&&sv.team==(k?'B':'A')?'<i class=pt-dot></i>':''}${esc(pn(pid))}</div><div class=pt-pts>${s.stb?s.p[k]:esc(ptsTeam(s,c,k))}</div><div class=pt-gm><small>${s.stb?'SÚPER TIE-BREAK':'JUEGOS'}</small><b>${s.stb?'':s.g[k]}</b></div></div>`;
+ return `<div class=pt-wrap><div class=pt-top><span class=pt-live>${fin?'FINALIZADO':m.estado=='pendiente'?'POR COMENZAR':'● EN VIVO'}</span><span>${esc(t?.nombre||'')} · Set ${Math.min(cur,c.sets)}${s.sets.length?' · '+s.sets.map(x=>x.join('–')).join('  '):''}</span></div><div class=pt-main>${team(0,m.pareja_a_id)}${team(1,m.pareja_b_id)}</div>${fin?`<div class=pt-fin>Ganaron ${esc(pn(s.w==0?m.pareja_a_id:m.pareja_b_id))} · ${esc(sets_(s))}</div>`:sv?`<div class=pt-srv>Saca: ${esc(nm(sv.player))}</div>`:''}</div>`}
+async function loadPantalla(){try{const r=await sb.rpc('marcador_publico',{p_partido:PANTALLA}),d=r.data;
+  if(!d||!d.partido){pantallaErr=true;render();return}
+  pantallaErr=false;M={};M[d.partido.id]=d.partido;T={};T[d.torneo.id]=d.torneo;P={};d.parejas.forEach(x=>P[x.id]=x);J={};d.jugadores.forEach(x=>J[x.id]=x);pantallaEvs=d.eventos||[];render()}
+ catch(e){pantallaErr=true;render()}}
 function render(){
+ if(PANTALLA){document.body.classList.remove('app-screen','tournaments-screen','matches-screen','ranking-screen');document.body.classList.add('pantalla');A.innerHTML=vPantalla();return}
  if(recovery){document.body.classList.remove('app-screen','tournaments-screen','matches-screen','ranking-screen');A.innerHTML=vRecovery();return}
  if(me&&(editDatos||needsData())){document.body.classList.remove('app-screen','tournaments-screen','matches-screen','ranking-screen');A.innerHTML=vDatos();return}
  document.body.classList.toggle('app-screen',!!me);document.body.classList.toggle('tournaments-screen',!!me&&!score&&tab=='torneos');document.body.classList.toggle('matches-screen',!!me&&!score&&tab=='partidos');document.body.classList.toggle('ranking-screen',!!me&&!score&&tab=='rank');
@@ -600,6 +631,8 @@ document.addEventListener('click',async e=>{const b=e.target.closest('[data-a]')
  else if(a=='resetEd'){const r=await sb.from('partidos_fixture').update({config:null}).eq('id',ed.id);if(err(r))return;ed=null;await load()}
  else if(a=='saveEd'){const r=ed.k=='T'?await sb.from('torneos').update({formato:$('#efm').value=='eliminacion_directa'?'eliminacion_directa':'grupos',config:{...readFmt(),modalidad:$('#efm').value},fecha_inicio:$('#fdt').value||null,...readVenue()}).eq('id',ed.id):await sb.from('partidos_fixture').update({config:readFmt()}).eq('id',ed.id);if(err(r))return;ed=null;await load()}
  else if(a=='datos'){editDatos=true;msg=''}
+ else if(a=='qr'){qrOpen=true}
+ else if(a=='qrclose'){qrOpen=false}
  else if(a=='cancelDatos'){editDatos=false;msg=''}
  else if(a=='saveDatos'){const f=$('#dnac').value,g=$('#dgen').value;
   if(!f){msg='Elegí tu fecha de nacimiento.'}else if(f<'1925-01-01'||f>'2015-12-31'){msg='La fecha no es válida.'}else if(!g){msg='Elegí tu género.'}
@@ -657,5 +690,5 @@ async function scoreAction(k,eq,j){if(scoreBusy||!score)return;const c=cfgOf(M[s
  document.addEventListener('pointercancel',()=>{if(hold){clearTimeout(hold.timer);hold=null}});
  document.addEventListener('click',e=>{const d=e.target.closest('[data-sc3k],[data-sc3close]');if(!d)return;
   if(d.dataset.sc3k&&mn){const x=mn;closeM();scoreAction(d.dataset.sc3k,x.eq,x.j)}else closeM()})}
-load().then(render);
+if(PANTALLA){loadPantalla();setInterval(loadPantalla,2000)}else load().then(render);
 </script></body></html>
