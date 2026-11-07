@@ -221,6 +221,36 @@ body.welcome .lg-card .mut{color:#e8d9a0;text-shadow:0 1px 4px #000}
 nav{display:flex;gap:0;padding:6px 0 10px}nav button{flex:1;background:transparent!important;border:0!important;color:#9fb0c4!important;font-size:11px;padding:6px 0;display:flex;flex-direction:column;align-items:center;gap:3px;box-shadow:none}nav button i{font-style:normal}nav button.on{color:#f0d77a!important;box-shadow:inset 0 -3px #d9bf68}
 .tournament-hero{background:linear-gradient(transparent 30%,#050d1a),var(--court) center 62%/cover!important;min-height:190px}
 .tournament-detail-info{padding:12px 14px!important}.pair-warn{color:#f0a860;font-size:13px;margin-top:4px}.pair-warn summary{cursor:pointer}
+/* Ranking moderno */
+body.ranking-screen .ranking-heading{font:700 28px Georgia,serif;color:#f6e7a8;margin:4px 0 0}
+body.ranking-screen .ranking-podium{display:grid!important;grid-template-columns:1fr 1.18fr 1fr;gap:8px;align-items:end;margin:20px 0 16px!important}
+body.ranking-screen .ranking-pod{border-radius:18px 18px 8px 8px!important;text-align:center;padding:12px 4px 14px!important;background:linear-gradient(180deg,#0f2447d9,#07132ad9)!important;border:1px solid #c9a24b66!important;box-shadow:none!important;transform:none!important;min-height:150px}
+body.ranking-screen .ranking-pod.first{min-height:190px;border-color:#f0d77a!important;background:linear-gradient(180deg,#3a3010d9,#07132ad9)!important;box-shadow:0 0 24px #d9bf6844!important}
+body.ranking-screen .ranking-pod.bronze{min-height:132px}
+body.ranking-screen .ranking-medal{width:28px;height:28px;border-radius:50%;margin:0 auto 8px;display:grid;place-items:center;font:800 14px system-ui;color:#0a1730}
+.silver .ranking-medal{background:linear-gradient(#f2f4f8,#9aa6b6)}.gold .ranking-medal{background:linear-gradient(#f8e9a6,#b8892f)}.bronze .ranking-medal{background:linear-gradient(#e8b27c,#9a5d2b)}
+body.ranking-screen .ranking-points{color:#f0d77a;font-weight:800;font-size:18px}
+body.ranking-screen .ranking-list{background:none!important;border:0!important;box-shadow:none!important;padding:0!important}
+body.ranking-screen .ranking-row{background:#0a1730b3!important;border:1px solid #c9a24b33!important;border-radius:14px!important;margin-bottom:8px!important}
+body.ranking-screen .ranking-row.me{border-color:#f0d77a!important;background:linear-gradient(90deg,#3a3010cc,#0a1730b3)!important}
+body.ranking-screen .ranking-position{color:#9fb0c4!important;font-weight:700}
+body.ranking-screen .ranking-self{background:transparent!important;border:0!important;color:#9fb0c4}
+/* Avatares grandes: invitación a subir foto */
+.pair-avatars{transform:none!important;width:auto!important}
+.pair-avatar.overlap{margin-left:-18px!important}
+body .ranking-pod .av{width:74px!important;height:74px!important;font-size:22px!important;border:3px solid #d9bf68!important}
+body .ranking-pod.first .av{width:92px!important;height:92px!important;font-size:26px!important;border-color:#f0d77a!important;box-shadow:0 0 22px #d9bf6877!important}
+body.ranking-screen .ranking-podium{grid-template-columns:1fr 1.2fr 1fr}body.ranking-screen .ranking-pod{min-height:190px}body.ranking-screen .ranking-pod.first{min-height:228px}body.ranking-screen .ranking-pod.bronze{min-height:176px}
+body .ranking-row .av{width:54px!important;height:54px!important;font-size:17px!important;border:2px solid #d9bf68!important}
+body .pair-list-item .av{width:54px!important;height:54px!important;font-size:17px!important}
+body .match-side .av{width:66px!important;height:66px!important;font-size:20px!important}
+body .fixture-pair .av{width:46px!important;height:46px!important;font-size:15px!important}
+.dr-av{width:120px!important;height:120px!important}.dr-av .av{width:100%!important;height:100%!important;font-size:34px!important}
+.photo-nudge{display:flex;align-items:center;gap:14px;width:100%;text-align:left;margin:14px 0;padding:12px 14px;border:1px dashed #f0d77a!important;border-radius:20px;background:#3a3010a6!important;color:#f5f2e9!important}
+.photo-nudge .pn-av .av{width:62px!important;height:62px!important}.photo-nudge b{display:block;color:#f0d77a;font-size:17px}.photo-nudge small{color:#d5dce6;font-size:13px}
+.photo-nudge i{margin-left:auto;width:34px;height:34px;border-radius:50%;display:grid;place-items:center;background:linear-gradient(#f0d77a,#b8892f);color:#0a1730;font:800 22px system-ui;font-style:normal}
+body.ranking-screen .ranking-row{display:grid!important;grid-template-columns:26px 54px 1fr auto!important;align-items:center!important;gap:12px!important;padding:9px 14px!important}
+body.ranking-screen .ranking-row .av{margin:0!important}
 /* App interna */
 :root{--club-page-bg:#050f1e}
 body.app-screen,body.tournaments-screen,body.matches-screen,body.ranking-screen{background:linear-gradient(#050d1a77,#050d1af2),var(--court) center bottom/auto 155% no-repeat fixed}
@@ -424,7 +454,8 @@ function vFixtureMap(t,ps,ms){
 }
 function vPartidos(){const l=Object.values(M).filter(canScore).sort((a,b)=>((a.orden_juego||9999)-(b.orden_juego||9999))||((a.numero||0)-(b.numero||0))),groups=[['en_progreso','EN JUEGO'],['pendiente','PRÓXIMOS'],['finalizado','FINALIZADOS']],org=Object.values(T).some(t=>t.organizador_id==me.id),intro=org?'Partidos de los torneos que organizás':'Tus cruces y partidos que tenés asignados';
  const nt=Object.values(T).filter(t=>t.estado=='inscripciones_abiertas'||t.estado=='en_progreso').sort((a,b)=>(a.fecha_inicio||'9').localeCompare(b.fecha_inicio||'9'))[0],ntc=nt?`<div class=next-card><small>PRÓXIMO TORNEO</small><div class=nc-t>${esc(nt.nombre)}</div><div class=nc-s>${esc(nt.categoria||'')}</div><div class=chips>${nt.fecha_inicio?`<span>${fdate(nt.fecha_inicio)}</span>`:''}${nt.hora_inicio?`<span>${esc(String(nt.hora_inicio).slice(0,5))}</span>`:''}${nt.complejo?`<span>${esc(nt.complejo)}</span>`:''}</div><button class=nc-go data-a=openT data-id="${esc(nt.id)}">Ver torneo</button></div>`:'';
- return `<h2 class=matches-heading>Hola, ${esc((me.nombre||'').split(' ')[0])}</h2><p class=matches-intro>${intro}</p>${ntc}${l.length?groups.map(([state,label])=>{const rows=l.filter(m=>m.estado==state);return rows.length?`<section aria-label="${label}"><div class=match-group-title>${label}<span class=match-group-count>${rows.length}</span></div>${rows.map(m=>mCard(m)).join('')}</section>`:''}).join(''):'<div class=matches-empty>Todavía no tenés partidos asignados.</div>'}`}
+ const nudge=!me.foto_url?`<button class=photo-nudge type=button data-a=foto><span class=pn-av>${av(me.id)}</span><span><b>Sumá tu foto</b><small>Así te ven en el ranking y en los partidos</small></span><i>+</i></button>`:'';
+ return `<h2 class=matches-heading>Hola, ${esc((me.nombre||'').split(' ')[0])}</h2><p class=matches-intro>${intro}</p>${nudge}${ntc}${l.length?groups.map(([state,label])=>{const rows=l.filter(m=>m.estado==state);return rows.length?`<section aria-label="${label}"><div class=match-group-title>${label}<span class=match-group-count>${rows.length}</span></div>${rows.map(m=>mCard(m)).join('')}</section>`:''}).join(''):'<div class=matches-empty>Todavía no tenés partidos asignados.</div>'}`}
 
 
 function vPreview(){const rows=previewRows?.rows||[],t=T[previewRows?.torneoId];if(!t)return '';
@@ -457,8 +488,8 @@ function vTorneos(){
 }
 
 function vRank(){const rows=Object.values(J).sort((a,b)=>(Number(b.elo_actual)||1200)-(Number(a.elo_actual)||1200)||nm(a.id).localeCompare(nm(b.id),'es')),top=rows.slice(0,3),podium=top.length===3?[top[1],top[0],top[2]]:top;
- const score=j=>Number(j.elo_actual)||1200,record=j=>`${Number(j.partidos_ganados)||0} victorias · ${Number(j.partidos_jugados)||0} partidos`,medals=['②','♛','③'];
- return `<h2 class=ranking-heading>Ranking</h2><p class=ranking-subtitle>Los puntajes del club</p><p class=ranking-note>El puntaje se actualiza al cerrar cada partido. La lista refleja los resultados registrados hasta ahora.</p>${rows.length?`${top.length===3?`<section class=ranking-podium aria-label="Podio de los tres primeros">${podium.map((j,i)=>`<article class="ranking-pod ${i===1?'first':''}"><div class=ranking-medal>${medals[i]}</div>${av(j.id)}<div class=ranking-player-name>${esc(nm(j.id))}</div><div class=ranking-points>${score(j).toLocaleString('es-AR')} <span class=ranking-unit>pts</span></div></article>`).join('')}</section>`:''}<section class=ranking-list aria-label="Posiciones">${rows.slice(3).map((j,i)=>`<div class=ranking-row><span class=ranking-position>${i+4}</span>${av(j.id)}<div><div class=ranking-player>${esc(nm(j.id))}</div><div class=ranking-record>${record(j)}</div></div><div class=ranking-score>${score(j).toLocaleString('es-AR')} <span class=ranking-unit>pts</span></div></div>`).join('')|| (top.length<3?top.map((j,i)=>`<div class=ranking-row><span class=ranking-position>${i+1}</span>${av(j.id)}<div><div class=ranking-player>${esc(nm(j.id))}</div><div class=ranking-record>${record(j)}</div></div><div class=ranking-score>${score(j).toLocaleString('es-AR')} <span class=ranking-unit>pts</span></div></div>`).join(''):'')}</section><div class=ranking-self><span>Tu posición</span><strong>${rows.findIndex(j=>j.id==me.id)+1}° · ${score(me).toLocaleString('es-AR')} pts</strong></div>`:'<div class=matches-empty>Todavía no hay jugadores para mostrar.</div>'}`}
+ const score=j=>Number(j.elo_actual)||1200,record=j=>{const w=Number(j.partidos_ganados)||0,g=Number(j.partidos_jugados)||0;return `${w} victoria${w==1?'':'s'} · ${g} partido${g==1?'':'s'}`},medals=['2','1','3'];
+ return `<h2 class=ranking-heading>Ranking</h2>${rows.length?`${top.length===3?`<section class=ranking-podium aria-label="Podio de los tres primeros">${podium.map((j,i)=>`<article class="ranking-pod ${['silver','first gold','bronze'][i]}"><div class=ranking-medal>${medals[i]}</div>${av(j.id)}<div class=ranking-player-name>${esc(nm(j.id))}</div><div class=ranking-points>${score(j).toLocaleString('es-AR')} <span class=ranking-unit>pts</span></div></article>`).join('')}</section>`:''}<section class=ranking-list aria-label="Posiciones">${rows.slice(3).map((j,i)=>`<div class="ranking-row ${j.id==me.id?'me':''}"><span class=ranking-position>${i+4}</span>${av(j.id)}<div><div class=ranking-player>${esc(nm(j.id))}</div><div class=ranking-record>${record(j)}</div></div><div class=ranking-score>${score(j).toLocaleString('es-AR')} <span class=ranking-unit>pts</span></div></div>`).join('')|| (top.length<3?top.map((j,i)=>`<div class="ranking-row ${j.id==me.id?'me':''}"><span class=ranking-position>${i+1}</span>${av(j.id)}<div><div class=ranking-player>${esc(nm(j.id))}</div><div class=ranking-record>${record(j)}</div></div><div class=ranking-score>${score(j).toLocaleString('es-AR')} <span class=ranking-unit>pts</span></div></div>`).join(''):'')}</section><div class=ranking-self><span>Tu posición</span><strong>${rows.findIndex(j=>j.id==me.id)+1}° · ${score(me).toLocaleString('es-AR')} pts</strong></div>`:'<div class=matches-empty>Todavía no hay jugadores para mostrar.</div>'}`}
 
 function serveConfig(m){const x=m.estado_marcador&&typeof m.estado_marcador=='object'?m.estado_marcador:{};return{first:x.equipo_saque_inicial||null,a:x.primer_sacador_a||null,b:x.primer_sacador_b||null}}
 function currentServer(m,s){const c=serveConfig(m);if(!c.first||!c.a||!c.b)return null;const pairA=pl(m.pareja_a_id),pairB=pl(m.pareja_b_id),a2=pairA.find(x=>x!=c.a),b2=pairB.find(x=>x!=c.b);if(!a2||!b2)return null;
